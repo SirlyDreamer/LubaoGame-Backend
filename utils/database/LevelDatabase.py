@@ -13,7 +13,7 @@ class Level(Base):
     description = Column(String)
     code = Column(String)
     data = Column(String)
-    assetFinish = Column(Boolean, default=False)
+    assetFinished = Column(Boolean, default=False)
     ifReference = Column(Boolean, default=False)
 
 class LevelDatabase:
@@ -23,8 +23,8 @@ class LevelDatabase:
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
-    def add_level(self, title, author, query, description, code, data, assetFinish, ifReference):
-        new_level = Level(title=title, author=author, query=query, description=description, code=code, data=data, assetFinish=assetFinish, ifReference=ifReference)
+    def add_level(self, title, author, query, description, code, data, assetFinished, ifReference):
+        new_level = Level(title=title, author=author, query=query, description=description, code=code, data=data, assetFinished=assetFinished, ifReference=ifReference)
         self.session.add(new_level)
         self.session.commit()
 
