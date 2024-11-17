@@ -1,3 +1,4 @@
+import json
 from sqlalchemy import Column, Integer, String, Boolean, create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
@@ -23,30 +24,39 @@ class LevelDatabase:
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
-    def add_level(self, title, author, query, description, code, data, assetFinished, ifReference):
-        new_level = Level(title=title, author=author, query=query, description=description, code=code, data=data, assetFinished=assetFinished, ifReference=ifReference)
+    def add_level(self, title, author, query, description, code, data, assetFinished=False, ifReference=False):
+        new_level = Level(
+            title=title,
+            author=author,
+            query=query,
+            description=description,
+            code=json.dumps(code),
+            data=json.dumps(data),
+            assetFinished=assetFinished,
+            ifReference=ifReference
+        )
         self.session.add(new_level)
         self.session.commit()
 
     def get_all_levels(self):
         return self.session.query(Level).all()
 
-    def get_level_by_id(self, id):
-        return self.session.query(Level).filter_by(id=id).first()
+    def get_level_by_id(self, level_id):
+        return self.session.query(Level).filter_by(id=level_id).first()
 
-    def update_level(self, id, title, author, query, description, code, data, assetFinish, ifReference):
-        level = self.get_level_by_id(id)
+    def update_level(self, level_id, title, author, query, description, code, data, assetFinished, ifReference):
+        level = self.get_level_by_id(level_id)
         level.title = title
         level.author = author
         level.query = query
         level.description = description
-        level.code = code
-        level.data = data
-        level.assetFinish = assetFinish
+        level.code = json.dumps(code)
+        level.data = json.dumps(data)
+        level.assetFinished = assetFinished
         level.ifReference = ifReference
         self.session.commit()
 
-    def delete_level(self, id):
-        level = self.get_level_by_id(id)
+    def delete_level(self, level_id):
+        level = self.get_level_by_id(level_id)
         self.session.delete(level)
         self.session.commit()
