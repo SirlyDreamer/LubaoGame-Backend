@@ -1,0 +1,31 @@
+services:
+  backend:
+    container_name: lubao-backend
+    build: ./docker
+    image: lubao-backend:py3.11
+    networks:
+      - lubao-network
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_HOST=postgresql
+      - POSTGRES_USER=lubao
+      - POSTGRES_PASSWORD=lubao-is-the-best
+      - POSTGRES_DB=lubao
+    depends_on:
+      - postgresql
+  postgresql:
+    container_name: lubao-postgresql
+    image: postgres:latest
+    networks:
+      - lubao-network
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=lubao
+      - POSTGRES_PASSWORD=lubao-is-the-best
+      - POSTGRES_DB=lubao
+
+networks:
+  lubao-network:
+    driver: bridge
