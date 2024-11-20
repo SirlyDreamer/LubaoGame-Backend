@@ -1,9 +1,12 @@
 import os
-from pydoc import describe
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+
+from utils.assets import get_initial_assets
+
 from utils import LevelDatabase
+
 app = FastAPI()
 
 app.add_middleware(
@@ -43,6 +46,11 @@ async def upload_level(request: Request):
             level.get("ifReference")
         )
     return {"message": f"Successully added {len(body)} levels"}
+
+@app.post("/getAllAssets")
+async def get_all_assets():
+    # TODO: Implement this function
+    return get_initial_assets()
 
 if __name__ == "__main__":
     import uvicorn
