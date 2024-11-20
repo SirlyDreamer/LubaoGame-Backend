@@ -2,8 +2,17 @@ import os
 from pydoc import describe
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from utils import LevelDatabase
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 level_db = LevelDatabase(
     host=os.getenv("POSTGRES_HOST", "localhost"),
