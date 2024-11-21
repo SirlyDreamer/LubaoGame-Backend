@@ -5,6 +5,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils import LevelDatabase, AssetsDatabase
+from utils.assets import get_initial_assets
+from lulu_exp.generate_code import gen_code
 
 app = FastAPI()
 
@@ -91,6 +93,20 @@ async def upload_asset(request: Request):
         )
         return_body.append({"name": asset.get("name"), "code": code, "message": msg})
     return return_body if len(return_body) > 1 else return_body[0]
+
+@app.post("/getCode")
+async def get_code(request: Request):
+    body = await request.json()
+    print(body)
+    if 'query' in body:
+        query = body['query']
+    mode = body['mode'] if 'mode' in body else "python"
+    model_choice = body['model_choice'] if 'model_choice' in body else "DeepSeek"
+    try:
+        return gen_code(query, mode, model_choice)
+    except Exception as e:
+        print(e)
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
