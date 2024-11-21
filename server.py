@@ -1,11 +1,10 @@
 import os
+import json
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from utils.assets import get_initial_assets
-
-from utils import LevelDatabase
+from utils import LevelDatabase, AssetsDatabase
 
 app = FastAPI()
 
@@ -18,6 +17,13 @@ app.add_middleware(
 )
 
 level_db = LevelDatabase(
+    host=os.getenv("POSTGRES_HOST", "localhost"),
+    user=os.getenv("POSTGRES_USER", "postgres"),
+    password=os.getenv("POSTGRES_PASSWD","password"),
+    database=os.getenv("POSTGRES_DB", "postgres")
+)
+
+asset_db = AssetsDatabase(
     host=os.getenv("POSTGRES_HOST", "localhost"),
     user=os.getenv("POSTGRES_USER", "postgres"),
     password=os.getenv("POSTGRES_PASSWD","password"),
@@ -47,10 +53,44 @@ async def upload_level(request: Request):
         )
     return {"message": f"Successully added {len(body)} levels"}
 
-@app.post("/getAllAssets")
-async def get_all_assets():
-    # TODO: Implement this function
-    return get_initial_assets()
+@app.post("/getImageList")
+async def get_image_list(request: Request):
+    try:
+        body = await request.json()
+    except json.decoder.JSONDecodeError:
+        body = {}
+    image_list = asset_db.get_assets_list("image", body.get("names"))
+    image_set = {image.name : image.url for image in image_list}
+    return image_set
+
+@app.post("/getAudioList")
+async def get_audio_list(request: Request):
+    try:
+        body = await request.json()
+    except json.decoder.JSONDecodeError:
+        body = {}
+    audio_list = asset_db.get_assets_list("audio", body.get("names"))
+    audio_set = {audio.name : audio.url for audio in audio_list}
+    return audio_set
+
+@app.post("/uploadAsset")
+async def upload_asset(request: Request):
+    try:
+        body = await request.json()
+    except json.decoder.JSONDecodeError:
+        return {"message": "Request body must be JSON"}, 400
+    if not isinstance(body, list):
+        body = [body]
+    return_body = []
+    for asset in body:
+        code, msg = asset_db.add_asset(
+            asset.get("name"),
+            asset.get("type"),
+            asset.get("asset"),
+            asset.get("overwrite", False)
+        )
+        return_body.append({"name": asset.get("name"), "code": code, "message": msg})
+    return return_body if len(return_body) > 1 else return_body[0]
 
 if __name__ == "__main__":
     import uvicorn

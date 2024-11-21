@@ -1,4 +1,16 @@
 services:
+  caddy:
+    container_name: lubao-caddy
+    image: caddy:latest
+    restart: always
+    networks:
+      - lubao-network
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile
+      - ./assets:/var/lib/assets
   backend:
     container_name: lubao-backend
     build:
@@ -15,6 +27,8 @@ services:
       - POSTGRES_USER=lubao
       - POSTGRES_PASSWD=kiJ8v6PNykQqW9V8
       - POSTGRES_DB=lubao
+    volumes:
+      - ./assets:/app/assets
     depends_on:
       - postgresql
   postgresql:
