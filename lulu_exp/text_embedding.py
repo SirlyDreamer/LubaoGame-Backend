@@ -1,12 +1,12 @@
 import torch
-from transformers import AutoTokenizer, AutoModel
-import os
+import os, json
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from tqdm import tqdm
+import requests
 
 class TextBase:
-    def __init__(self, model_name='BAAI/bge-small-zh-v1.5', proxy=None):
+    def __init__(self):
         """
         Initialize the TextBase with a specified model and optional proxy settings.
 
@@ -14,7 +14,7 @@ class TextBase:
         - model_name (str): The name of the pre-trained model to load from HuggingFace Hub.
         - proxy (str, optional): The proxy address to use for HTTP and HTTPS requests.
         """
-        self.text_extractor = TextExtractor(model_name=model_name, proxy=proxy)
+        self.text_extractor = TextExtractor()
         self.data = []  # Initialize an empty list to store embeddings, text, and IDs
 
     def build_base(self, texts):
@@ -26,7 +26,7 @@ class TextBase:
         """
         embeddings = self.text_extractor.extract(texts)
         for idx, text in tqdm(enumerate(texts), desc='Building Base', total=len(texts)):
-            self.data.append({'id': idx, 'text': text, 'embedding': embeddings[idx].cpu().numpy()})
+            self.data.append({'id': idx, 'text': text, 'embedding': embeddings[idx]['embedding']})
 
     def strong_match( self, text ):
         for idx, data in enumerate(self.data):
@@ -66,7 +66,7 @@ class TextBase:
         """
         embedding = self.text_extractor.extract([text])[0]
         new_id = len(self.data)
-        self.data.append({'id': new_id, 'text': text, 'embedding': embedding.cpu().numpy()})
+        self.data.append({'id': new_id, 'text': text, 'embedding': embedding['embedding']})
 
     def search_with_text(self, query, top_k=3):
         """
@@ -79,7 +79,7 @@ class TextBase:
         Returns:
         - list of dict: A list of the top_k closest matches, each as a dictionary with id, text, and score.
         """
-        query_embedding = self.text_extractor.extract([query])[0].cpu().numpy()
+        query_embedding = self.text_extractor.extract([query])[0]['embedding']
         base_embeddings = torch.stack([torch.tensor(record['embedding']) for record in self.data]).cpu().numpy()
         similarities = cosine_similarity([query_embedding], base_embeddings)[0]
         sorted_indices = similarities.argsort()[::-1][:top_k]
@@ -89,51 +89,26 @@ class TextBase:
 
 
 class TextExtractor:
-    def __init__(self, model_name='BAAI/bge-small-zh-v1.5', proxy=None):
-        """
-        Initialize the TextExtractor with a specified model and optional proxy settings.
-
-        Parameters:
-        - model_name (str): The name of the pre-trained model to load from HuggingFace Hub.
-        - proxy (str, optional): The proxy address to use for HTTP and HTTPS requests.
-        """
-        """
-        if proxy is None:
-            proxy = 'http://localhost:8234'
-
-        if proxy:
-            os.environ['HTTP_PROXY'] = proxy
-            os.environ['HTTPS_PROXY'] = proxy
-        """
-        try:
-            self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-            self.model = AutoModel.from_pretrained(model_name)
-        except:
-            print('try switch on local_files_only')
-            self.tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=True)
-            self.model = AutoModel.from_pretrained(model_name, local_files_only=True)
-
-        self.model.eval()
+    def __init__(self):
+        pass
 
     def extract(self, sentences):
-        """
-        Extract sentence embeddings for the provided sentences.
+        url = "https://api.siliconflow.cn/v1/embeddings"
 
-        Parameters:
-        - sentences (list of str): A list of sentences to extract embeddings for.
+        payload = {
+            "model": "BAAI/bge-m3",
+            "input": sentences,
+            "encoding_format": "float"
+        }
+        headers = {
+            "Authorization": "Bearer sk-ldcjdyxkkqxmvqbuuqqufuuodesddgkcyuplynzkzulfsonj",
+            "Content-Type": "application/json"
+        }
 
-        Returns:
-        - torch.Tensor: The normalized sentence embeddings.
-        """
-        encoded_input = self.tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
-        
-        with torch.no_grad():
-            model_output = self.model(**encoded_input)
-            sentence_embeddings = model_output[0][:, 0]
-        
-        sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
-        return sentence_embeddings
+        response = requests.request("POST", url, json=payload, headers=headers)
 
+        res = response.text
+        return json.loads(res)['data']
 
 if __name__ == '__main__':
     # Example usage
