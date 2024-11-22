@@ -1,5 +1,6 @@
 import os, sys
 import json
+import requests
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -7,6 +8,7 @@ from generate_prompt import parse_jsonl
 from text_embedding import TextBase
 import zhipu_question2response as zhipu_qr
 import deepseek_question2response as deepseek_qr
+import qwen_question2response as qwen_qr
 from post_extract import post_extract
 from post_extract import post_extract_js
 
@@ -48,6 +50,8 @@ def get_response(prompt, model_choice):
         response = zhipu_qr.question2response(prompt)
     elif model_choice == "DeepSeek":
         response = deepseek_qr.question2response(prompt)
+    elif model_choice == "Qwen":
+        response = qwen_qr.question2response(prompt)
     else:
         raise ValueError("Invalid model choice")
     return response
@@ -97,36 +101,6 @@ def gen_code(query, mode="python", model_choice="DeepSeek"):
     }
     return result
 
-from tqdm import tqdm
-import requests
-
-# 主测试逻辑
-def test_queries(queries, model_choice="DeepSeek", mode="python", save_file = "lulu_exp/save.jsonl"):
-    results = []
-    for query in tqdm(queries):
-        # Step 1: 生成 Prompt
-        prompt = generate_prompt(query, mode)
-        
-        # Step 2: 调用模型获取 Response
-        response = get_response(prompt, model_choice)
-        
-        # Step 3: 提取代码（Python 或 JS）
-        code = callback_post_extract(response, mode)
-        
-        # Step 4: 保存结果到 JSONL
-        result = {
-            "query": query,
-            f"{mode}_code": code,
-            "response": response,
-            "prompt": prompt
-        }
-        results.append(result)
-        
-        with open(save_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(result, ensure_ascii=False) + "\n")
-    
-    return results
-
 # 测试输入
 queries = [
     "爸爸的爸爸和妈妈分别叫什么",
@@ -146,7 +120,7 @@ if __name__ == "__main__":
     headers = {'Content-Type': 'application/json'}
     data = {"query":"爸爸的爸爸和妈妈分别叫什么",
             "mode":'python',
-            "model_choice":"DeepSeek"}
+            "model_choice":"Qwen"}
     url = 'http://127.0.0.1:8080/getCode'
     response = requests.post(url, data=json.dumps(data), headers=headers)
     response.encoding = 'utf-8'

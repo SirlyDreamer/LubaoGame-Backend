@@ -5,7 +5,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils import LevelDatabase, AssetsDatabase
-from utils.assets import get_initial_assets
 from lulu_exp.generate_code import gen_code
 
 app = FastAPI()
