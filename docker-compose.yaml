@@ -22,11 +22,9 @@ services:
       - lubao-network
     ports:
       - "8080:8080"
-    environment:
-      - POSTGRES_HOST=postgresql
-      - POSTGRES_USER=lubao
-      - POSTGRES_PASSWD=kiJ8v6PNykQqW9V8
-      - POSTGRES_DB=lubao
+    env_file:
+      - .database.env
+      - .api_keys.env
     volumes:
       - ./assets:/app/assets
     depends_on:
@@ -38,11 +36,8 @@ services:
       - lubao-network
     ports:
       - "5432:5432"
-    environment:
-      - POSTGRES_USER=lubao
-      - POSTGRES_PASSWORD=kiJ8v6PNykQqW9V8
-      - POSTGRES_DB=lubao
-      - PGDATA=/var/lib/postgresql/data/pgdata
+    env_file:
+      - .database.env
     volumes:
       - ./data:/var/lib/postgresql/data
 

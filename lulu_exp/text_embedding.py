@@ -1,5 +1,6 @@
-import torch
-import os, json
+import os
+import json
+import numpy as np
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from tqdm import tqdm
@@ -53,9 +54,6 @@ class TextBase:
         """
         df = pd.read_parquet(path, engine='pyarrow')
         self.data = df.to_dict(orient='records')
-        # Convert numpy arrays back to tensors for embeddings
-        # for record in self.data:
-            # record['embedding'] = torch.tensor(record['embedding'])
 
     def add(self, text):
         """
@@ -80,7 +78,7 @@ class TextBase:
         - list of dict: A list of the top_k closest matches, each as a dictionary with id, text, and score.
         """
         query_embedding = self.text_extractor.extract([query])[0]['embedding']
-        base_embeddings = torch.stack([torch.tensor(record['embedding']) for record in self.data]).cpu().numpy()
+        base_embeddings = np.array([record['embedding'] for record in self.data])
         similarities = cosine_similarity([query_embedding], base_embeddings)[0]
         sorted_indices = similarities.argsort()[::-1][:top_k]
         results = [{'id': self.data[idx]['id'], 'text': self.data[idx]['text'], 'score': similarities[idx]}
@@ -90,22 +88,21 @@ class TextBase:
 
 class TextExtractor:
     def __init__(self):
-        pass
+        self.base_url = "https://api.siliconflow.cn/v1/embeddings"
+        self.api_key  = os.getenv("SILICONFLOW_API_KEY")
 
     def extract(self, sentences):
-        url = "https://api.siliconflow.cn/v1/embeddings"
-
         payload = {
             "model": "BAAI/bge-m3",
             "input": sentences,
             "encoding_format": "float"
         }
         headers = {
-            "Authorization": "Bearer sk-ldcjdyxkkqxmvqbuuqqufuuodesddgkcyuplynzkzulfsonj",
+            "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
 
-        response = requests.request("POST", url, json=payload, headers=headers)
+        response = requests.request("POST", self.base_url, json=payload, headers=headers)
 
         res = response.text
         return json.loads(res)['data']

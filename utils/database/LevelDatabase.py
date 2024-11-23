@@ -24,7 +24,12 @@ class LevelDatabase:
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
-    def add_level(self, title, author, query, description, code, data, assetFinished=False, ifReference=False):
+    def add_level(self, title, author, query, description, code, data, assetFinished=False, ifReference=False, allow_overwrite=False):
+        if self.get_level(title):
+            if allow_overwrite:
+                self.delete_level(title)
+            else:
+                return 1, f"Level {title} already exists"
         new_level = Level(
             title=title,
             author=author,
@@ -37,15 +42,21 @@ class LevelDatabase:
         )
         self.session.add(new_level)
         self.session.commit()
+        return 0, "Level added successfully"
 
-    def get_all_levels(self):
-        return self.session.query(Level).all()
+    def get_level_list(self, titles):
+        if titles:
+            if isinstance(titles, str):
+                titles = [titles]
+            return self.session.query(Level).filter(Level.title.in_(titles)).all()
+        else:
+            return self.session.query(Level).all()
 
-    def get_level_by_id(self, level_id):
-        return self.session.query(Level).filter_by(id=level_id).first()
+    def get_level(self, title):
+        return self.session.query(Level).filter_by(title=title).first()
 
     def update_level(self, level_id, title, author, query, description, code, data, assetFinished, ifReference):
-        level = self.get_level_by_id(level_id)
+        level = self.get_level(title)
         level.title = title
         level.author = author
         level.query = query
@@ -56,7 +67,7 @@ class LevelDatabase:
         level.ifReference = ifReference
         self.session.commit()
 
-    def delete_level(self, level_id):
-        level = self.get_level_by_id(level_id)
+    def delete_level(self, title):
+        level = self.get_level(title)
         self.session.delete(level)
         self.session.commit()

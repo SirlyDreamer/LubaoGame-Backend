@@ -33,7 +33,7 @@ asset_db = AssetsDatabase(
 
 @app.get("/getAllLevels")
 async def get_all_levels():
-    levels = level_db.get_all_levels()
+    levels = level_db.get_level_list()
     return [{"id": level.id, "title": level.title, "data": level.data, "author": level.author} for level in levels]
 
 @app.post("/uploadLevel")
@@ -41,8 +41,9 @@ async def upload_level(request: Request):
     body = await request.json()
     if not isinstance(body, list):
         body = [body]
+    response_body = []
     for level in body:
-        level_db.add_level(
+        code, msg = level_db.add_level(
             level.get("title"),
             level.get("author"),
             level.get("query"),
@@ -50,9 +51,20 @@ async def upload_level(request: Request):
             level.get("code"),
             level.get("data"),
             level.get("assetFinished"),
-            level.get("ifReference")
+            level.get("ifReference"),
+            level.get("overwrite", False)
         )
-    return {"message": f"Successully added {len(body)} levels"}
+        response_body.append({"title": level.get("title"), "code": code, "message": msg})
+    return response_body if len(response_body) > 1 else response_body[0]
+
+@app.post("/getLevelList")
+async def get_level_list(request: Request):
+    try:
+        body = await request.json()
+    except json.decoder.JSONDecodeError:
+        body = {}
+    level_list = level_db.get_level_list(body.get("titles"))
+    return [{"id": level.id, "title": level.title, "data": level.data, "author": level.author} for level in level_list]
 
 @app.post("/getImageList")
 async def get_image_list(request: Request):

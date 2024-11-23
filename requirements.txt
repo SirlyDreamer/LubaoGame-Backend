@@ -1,5 +1,10 @@
 SQLAlchemy
 psycopg2-binary
+scikit-learn
+datasets
+zhipuai
 uvicorn
 fastapi
 mimetype
+requests
+openai

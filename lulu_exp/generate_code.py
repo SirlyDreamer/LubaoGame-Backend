@@ -20,9 +20,9 @@ from post_extract import post_extract_js
 # 文件路径
 # global save_file
 # save_file = "output_test_results.jsonl"
-level_data_file = "lulu_exp/sample_levels.jsonl"
-level_data_python_file = "lulu_exp/sample_levels_python.jsonl"
-base_save_file = "lulu_exp/id_text_vector.parquet"
+level_data_file = "/app/lulu_exp/sample_levels.jsonl"
+level_data_python_file = "/app/lulu_exp/sample_levels_python.jsonl"
+base_save_file = "/app/lulu_exp/id_text_vector.parquet"
 
 # 预加载数据
 level_datas = parse_jsonl(level_data_file)
