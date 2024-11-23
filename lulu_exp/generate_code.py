@@ -23,26 +23,39 @@ from post_extract import post_extract_js
 level_data_file = "/app/lulu_exp/sample_levels.jsonl"
 level_data_python_file = "/app/lulu_exp/sample_levels_python.jsonl"
 base_save_file = "/app/lulu_exp/id_text_vector.parquet"
-
-# 预加载数据
-level_datas = parse_jsonl(level_data_file)
-level_datas_python = parse_jsonl(level_data_python_file)
+level_data_file_ts = None
+level_data_python_file_ts = None
+level_datas = None
+level_datas_python = None
 layout_data = None
-
 text_base = TextBase()
-query_texts = [d["query_str"] for d in level_datas]
 
-# 构建或加载基础数据
-if os.path.exists(base_save_file):
-    text_base.load(base_save_file)
-    rebuild = any(text_base.strong_match(query_text) is None for query_text in query_texts)
-else:
-    rebuild = True
+def load_datas():
+    global level_data_file_ts, level_data_python_file_ts,\
+            level_datas, level_datas_python, text_base
 
-if rebuild:
-    text_base = TextBase()
-    text_base.build_base(query_texts)
-    text_base.save(base_save_file)
+    rebuild = False
+    ts = os.path.getmtime(level_data_file)
+    if ts != level_data_file_ts:
+        level_data_file_ts = ts
+        level_datas = parse_jsonl(level_data_file)
+        query_texts = [d["query_str"] for d in level_datas]
+
+        if os.path.exists(base_save_file):
+            text_base.load(base_save_file)
+            rebuild = any(text_base.strong_match(query_text) is None for query_text in query_texts)
+        else:
+            rebuild = True
+
+    ts = os.path.getmtime(level_data_python_file)
+    if ts != level_data_python_file_ts:
+        level_data_python_file_ts = ts
+        level_datas_python = parse_jsonl(level_data_python_file)
+
+    if rebuild:
+        text_base = TextBase()
+        text_base.build_base(query_texts)
+        text_base.save(base_save_file)
 
 # 假设的函数
 def get_response(prompt, model_choice):
@@ -90,6 +103,7 @@ def callback_post_extract(response, mode="python"):
     return code
 
 def gen_code(query, mode="python", model_choice="DeepSeek"):
+    load_datas()
     prompt = generate_prompt(query, mode)
     response = get_response(prompt, model_choice)
     code = callback_post_extract(response, mode)
@@ -100,28 +114,3 @@ def gen_code(query, mode="python", model_choice="DeepSeek"):
         "prompt": prompt
     }
     return result
-
-# 测试输入
-queries = [
-    "爸爸的爸爸和妈妈分别叫什么",
-    "学习一首经典的宋词",
-    "生成一个认识水果的游戏",
-    "生成一个认识形状的游戏",
-    "红色的水果是什么",
-    "认识植物的不同部位",
-    "写一个认识中国菜的游戏",
-    "关于水可以电解成氢气和氧气的游戏",
-    "学习一下祖国-中国有哪些特色建筑",
-    "学习一下哪个国旗是五星红旗"
-]
-
-# 执行测试
-if __name__ == "__main__":
-    headers = {'Content-Type': 'application/json'}
-    data = {"query":"爸爸的爸爸和妈妈分别叫什么",
-            "mode":'python',
-            "model_choice":"Qwen"}
-    url = 'http://127.0.0.1:8080/getCode'
-    response = requests.post(url, data=json.dumps(data), headers=headers)
-    response.encoding = 'utf-8'
-    print(response.text)
