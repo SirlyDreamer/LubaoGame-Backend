@@ -1,7 +1,7 @@
 import os
 import json
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils import LevelDatabase, AssetsDatabase
@@ -108,9 +108,10 @@ async def upload_asset(request: Request):
 @app.post("/getCode")
 async def get_code(request: Request):
     body = await request.json()
-    print(body)
     if 'query' in body:
         query = body['query']
+    else:
+        return {"error": "Query field missing from request body"}
     mode = body['mode'] if 'mode' in body else "python"
     model_choice = body['model_choice'] if 'model_choice' in body else "DeepSeek"
     try:
@@ -118,6 +119,17 @@ async def get_code(request: Request):
     except Exception as e:
         print(e)
         return {"error": str(e)}
+
+@app.post("/updateSampleFile")
+async def upload_file(sample_levels: UploadFile = File(...),
+                      sample_levels_python: UploadFile = File(...)):
+    with open(os.path.join('/app/lulu_exp/', sample_levels.filename), 'wb') as f:
+        contents = await sample_levels.read()  # 异步读取文件内容
+        f.write(contents)
+    with open(os.path.join('/app/lulu_exp/', sample_levels_python.filename), 'wb') as f:
+        contents = await sample_levels_python.read()  # 异步读取文件内容
+        f.write(contents)
+    return {"message": f"Successfully saved {sample_levels.filename} and {sample_levels_python.filename}"}
 
 if __name__ == "__main__":
     import uvicorn
