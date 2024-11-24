@@ -166,3 +166,6 @@ assets
 data
 .database.env
 .api_keys.env
+lulu_exp/sample_levels.jsonl
+lulu_exp/sample_levels_python.jsonl
+lulu_exp/id_text_vector.parquet

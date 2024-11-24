@@ -8,3 +8,4 @@ fastapi
 mimetype
 requests
 openai
+python-multipart
