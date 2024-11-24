@@ -44,7 +44,7 @@ class LevelDatabase:
         self.session.commit()
         return 0, "Level added successfully"
 
-    def get_level_list(self, titles):
+    def get_level_list(self, titles=None):
         if titles:
             if isinstance(titles, str):
                 titles = [titles]
