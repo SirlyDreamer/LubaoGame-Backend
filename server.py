@@ -4,7 +4,7 @@ import json
 from fastapi import FastAPI, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from utils import LevelDatabase, AssetsDatabase
+from utils import LevelDatabase, AssetsDatabase, fill_image, gen_image
 from lulu_exp.generate_code import gen_code
 
 app = FastAPI()
@@ -130,6 +130,35 @@ async def upload_file(sample_levels: UploadFile = File(...),
         contents = await sample_levels_python.read()  # 异步读取文件内容
         f.write(contents)
     return {"message": f"Successfully saved {sample_levels.filename} and {sample_levels_python.filename}"}
+
+@app.post("/generateImage")
+async def generate_image(request: Request):
+    body = await request.json()
+    image = fill_image(body.get("name"), "图片生成中...")
+    code, msg = asset_db.add_asset(
+        body.get("name"),
+        "image",
+        image,
+        body.get("overwrite", False)
+    )
+    image = await gen_image(body.get("prompt"))
+    code, msg = asset_db.add_asset(
+        body.get("name"),
+        "image",
+        image,
+        body.get("overwrite", False)
+    )
+    if image is None:
+        image = fill_image(body.get("name"), "图片生成失败")
+        code, msg = asset_db.add_asset(
+            body.get("name"),
+            "image",
+            image,
+            body.get("overwrite", False)
+        )
+        return {"name": body.get("name"), "code": 2, "message": "Failed to generate image"}
+    return {"name": body.get("name"), "code": code, "message": msg}
+    
 
 if __name__ == "__main__":
     import uvicorn

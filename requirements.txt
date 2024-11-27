@@ -1,5 +1,6 @@
 SQLAlchemy
 psycopg2-binary
+python-multipart
 scikit-learn
 datasets
 zhipuai
@@ -7,5 +8,6 @@ uvicorn
 fastapi
 mimetype
 requests
+dashscope
+pillow
 openai
-python-multipart

@@ -4,7 +4,7 @@ from openai import OpenAI
 def question2response(user_input):
     client = OpenAI(
         base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-        api_key=os.getenv("BAILIAN_API_KEY")
+        api_key=os.getenv("DASHSCOPE_API_KEY")
     )  # 创建客户端实例
 
     response = client.chat.completions.create(  # 发送请求
