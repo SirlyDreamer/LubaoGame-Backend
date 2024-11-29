@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 
 from fastapi import FastAPI, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -64,7 +65,7 @@ async def get_level_list(request: Request):
     except json.decoder.JSONDecodeError:
         body = {}
     level_list = level_db.get_level_list(body.get("titles"))
-    return [{"id": level.id, "title": level.title, "data": level.data, "author": level.author} for level in level_list]
+    return sorted([{"id": level.id, "title": level.title, "data": level.data, "author": level.author} for level in level_list], key=lambda x: x["id"])
 
 @app.post("/getImageList")
 async def get_image_list(request: Request):
@@ -141,7 +142,10 @@ async def generate_image(request: Request):
         image,
         body.get("overwrite", False)
     )
-    image = await gen_image(body.get("prompt"))
+    if code == 1:
+        return {"name": body.get("name"), "code": 1, "message": "Asset already exists"}
+    event_loop = asyncio.get_event_loop()
+    image = await event_loop.run_in_executor(None, gen_image, body.get("prompt"))
     code, msg = asset_db.add_asset(
         body.get("name"),
         "image",

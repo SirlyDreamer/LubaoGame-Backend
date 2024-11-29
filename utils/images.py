@@ -50,7 +50,7 @@ def fill_image(name, prompt):
     draw.text(position, text, font=font, fill="black")
     return image_to_base64(img)
 
-async def gen_image(input_prompt):
+def gen_image(input_prompt):
     for _ in range(3):
         response = ImageSynthesis.call(
             model="flux-schnell", 
