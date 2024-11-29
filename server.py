@@ -150,7 +150,7 @@ async def generate_image(request: Request):
         body.get("name"),
         "image",
         image,
-        body.get("overwrite", False)
+        True
     )
     if image is None:
         image = fill_image(body.get("name"), "图片生成失败")
@@ -158,7 +158,7 @@ async def generate_image(request: Request):
             body.get("name"),
             "image",
             image,
-            body.get("overwrite", False)
+            True
         )
         return {"name": body.get("name"), "code": 2, "message": "Failed to generate image"}
     return {"name": body.get("name"), "code": code, "message": msg}
